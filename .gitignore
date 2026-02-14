@@ -8,10 +8,10 @@ venv/
 ENV/
 
 # Data (CRITICAL: Do not push large datasets)
-data/
-archive*.zip
-sen12flood/
-xbd/
+/data/
+/archive*.zip
+/sen12flood/
+/xbd/
 
 # Checkpoints
 checkpoints/
