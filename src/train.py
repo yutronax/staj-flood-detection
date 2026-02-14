@@ -1,4 +1,8 @@
 import os
+import sys
+# [COLAB] Python path ayarı | colab, path
+sys.path.append(os.getcwd())
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -17,12 +21,17 @@ def train_model(args):
     transform = transforms.Compose([
         transforms.Resize((256, 256)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406, 0.485, 0.456, 0.406], 
-                             std=[0.229, 0.224, 0.225, 0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                             std=[0.229, 0.224, 0.225])
     ])
 
     full_dataset = XBDDataset(root_dir=args.data_dir, transform=transform)
+    print(f"Dataset found: {len(full_dataset)} samples.")
     
+    if len(full_dataset) == 0:
+        print("ERROR: Dataset is empty. Check data_dir.")
+        return
+
     # Train/Val Split (%80 - %20)
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
@@ -30,6 +39,8 @@ def train_model(args):
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    
+    print("Training loop starting...")
 
     # [MODEL] Başlatma
     model = AttentionUNet(in_channels=6, out_channels=1).to(device)
