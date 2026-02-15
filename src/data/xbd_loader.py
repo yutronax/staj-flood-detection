@@ -11,10 +11,11 @@ class XBDDataset(data.Dataset):
     
     Afet öncesi ve sonrası görüntüleri birleştirerek 6 kanallı giriş oluşturur.
     """
-    def __init__(self, root_dir, transform=None, mask_binary=True):
+    def __init__(self, root_dir, transform=None, mask_binary=True, augment=False):
         self.root_dir = root_dir
         self.transform = transform
         self.mask_binary = mask_binary
+        self.augment = augment
         self.samples = self._load_samples()
 
     def _load_samples(self):
@@ -60,9 +61,7 @@ class XBDDataset(data.Dataset):
             pre_img = self.transform(pre_img)
             post_img = self.transform(post_img)
             
-            # Maskeyi görüntüyle aynı boyuta getir (Nearest Neighbor interpolation önemli!)
-            # self.transform içinde Resize varsa onu kullanmalıyız.
-            # Şimdilik basitçe transform'un beklediği boyuta çekiyoruz.
+            # Maskeyi görüntüyle aynı boyuta getir
             if hasattr(self.transform, 'transforms'):
                 for t in self.transform.transforms:
                     if isinstance(t, T.Resize):
@@ -70,7 +69,19 @@ class XBDDataset(data.Dataset):
             
             mask = T.ToTensor()(mask)
             if self.mask_binary:
-                mask = (mask > 0).float() # Kesin 0 veya 1
+                mask = (mask > 0).float()
+
+        # [AUGMENTATION] Rastgele Çevirmeler (Horizontal/Vertical Flip)
+        if hasattr(self, 'augment') and self.augment:
+            import random
+            if random.random() > 0.5:
+                pre_img = torch.flip(pre_img, dims=[2])
+                post_img = torch.flip(post_img, dims=[2])
+                mask = torch.flip(mask, dims=[2])
+            if random.random() > 0.5:
+                pre_img = torch.flip(pre_img, dims=[1])
+                post_img = torch.flip(post_img, dims=[1])
+                mask = torch.flip(mask, dims=[1])
             
         # Öncesi ve Sonrası görüntüleri birleştir (6 kanal)
         x = torch.cat([pre_img, post_img], dim=0)

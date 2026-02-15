@@ -25,7 +25,10 @@ def train_model(args):
                              std=[0.229, 0.224, 0.225])
     ])
 
-    full_dataset = XBDDataset(root_dir=args.data_dir, transform=transform)
+    from src.utils.losses import CombinedLoss
+    
+    # Train set için augmentasyonu aktifleştiriyoruz
+    full_dataset = XBDDataset(root_dir=args.data_dir, transform=transform, augment=True)
     print(f"Dataset found: {len(full_dataset)} samples.")
     
     if len(full_dataset) == 0:
@@ -36,16 +39,21 @@ def train_model(args):
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    
+    # Validation set'te augmentasyonu kapatıyoruz (Güvenli yöntem)
+    val_dataset.dataset.augment = False # Dikket: random_split sonrası ana dataset'e erişiyoruz
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
     
-    print("Training loop starting...")
+    print("Training loop starting with Augmentation and BCE+Dice Loss...")
 
     # [MODEL] Başlatma
     model = AttentionUNet(in_channels=6, out_channels=1).to(device)
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    
+    # Gelişmiş Loss ve Optimizer
+    criterion = CombinedLoss()
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
 
     # [LOOP] Eğitim Döngüsü
     for epoch in range(args.epochs):
