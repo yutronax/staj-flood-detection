@@ -16,7 +16,7 @@ class FloodNetDataset(data.Dataset):
         self.augment = augment
         self.samples = self._load_samples()
         
-        # FloodNet Sınıf Haritası (İndirilen veri setine göre kontrol edilmelidir)
+        # FloodNet Sınıf Haritası
         self.class_names = {
             0: 'Background',
             1: 'Building-Flooded',
@@ -32,7 +32,6 @@ class FloodNetDataset(data.Dataset):
 
     def _load_samples(self):
         samples = []
-        # Yaygın FloodNet klasör yapısı: images/ ve masks/
         img_dir = os.path.join(self.root_dir, 'images')
         mask_dir = os.path.join(self.root_dir, 'masks')
         
@@ -40,8 +39,8 @@ class FloodNetDataset(data.Dataset):
             return []
 
         for img_name in os.listdir(img_dir):
-            if img_name.endswith(('.jpg', '.png')):
-                mask_name = img_name # Genelde isimler aynıdır
+            if img_name.endswith('.jpg'):
+                mask_name = img_name.replace('.jpg', '.png')
                 mask_path = os.path.join(mask_dir, mask_name)
                 if os.path.exists(mask_path):
                     samples.append({
@@ -57,12 +56,12 @@ class FloodNetDataset(data.Dataset):
         sample = self.samples[index]
         
         image = Image.open(sample['image']).convert('RGB')
-        mask = Image.open(sample['mask']).convert('L') # Class ID'ler Gray scale içindedir
+        mask = Image.open(sample['mask']).convert('L')
         
         if self.transform:
             image = self.transform(image)
             
-            # Maske boyutlandırma (Interpolation NEAREST olmalı yoksa Class ID'ler bozulur)
+            # Maske boyutlandırma (NEAREST interpolation)
             if hasattr(self.transform, 'transforms'):
                 for t in self.transform.transforms:
                     if isinstance(t, T.Resize):
@@ -81,3 +80,21 @@ class FloodNetDataset(data.Dataset):
                 mask = torch.flip(mask, dims=[0])
                 
         return image, mask
+
+# [TEST] Loader Doğrulama
+if __name__ == "__main__":
+    from torchvision import transforms
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+    ])
+    
+    dataset = FloodNetDataset(root_dir='data/floodnet', transform=transform)
+    if len(dataset) > 0:
+        x, y = dataset[0]
+        print(f"FloodNet Sample Loaded Successfully!")
+        print(f"Input Shape: {x.shape}")
+        print(f"Mask Shape: {y.shape}")
+        print(f"Unique Class IDs: {torch.unique(y)}")
+    else:
+        print("No samples found in data/floodnet")
