@@ -48,10 +48,21 @@ if __name__ == "__main__":
     # Test Senaryosu
     assistant = DisasterMultimodalAssistant()
     
-    # Phase 2'de ürettiğimiz sel tahminlerinden birini test edelim
-    test_image = "results/Phase2_MultiClassDisaster/floodnet_test_1.png"
+    # Mevcut sonuçlardan bir resim bulmaya çalışalım
+    possible_paths = [
+        "results/Phase2_MultiClassDisaster/floodnet_test_1.png",
+        "results/Phase1_BuildingDetection/prediction_1.png",
+        "data/floodnet/images/10165.jpg" # Yerel veri seti yolu
+    ]
     
-    if os.path.exists(test_image):
+    test_image = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            test_image = path
+            break
+
+    if test_image:
+        print(f"\n[TEST]: Testing with image: {test_image}")
         # 1. Otomatik Betimleme
         print("\n[ANALİZ]: Görüntü Tanımlanıyor...")
         desc = assistant.generate_report(test_image)
