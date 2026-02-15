@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 from .modules import ConvBlock, AttentionBlock
 
-# [MODEL_ATTENTION_UNET] Attention U-Net Mimarisi | segmentation, attention, unet
-# 6 kanallı girdi (RGB Öncesi + RGB Sonrası) için tasarlanmıştır.
+# Attention U-Net Mimarisi | segmentation, multi-class
+# FloodNet (3 kanal RGB) veya xBD (6 kanal RGB Pre+Post) için kullanılabilir.
 class AttentionUNet(nn.Module):
-    def __init__(self, in_channels=6, out_channels=1):
+    def __init__(self, in_channels=3, out_channels=10):
         super(AttentionUNet, self).__init__()
 
         # [ENCODER] Contracting Path
