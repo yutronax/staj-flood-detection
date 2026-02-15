@@ -12,11 +12,17 @@
     *   20 Epoch eğitim başarıyla bitti (Combined BCE+Dice).
     *   Final model yerel test edildi ve tahminler `results/v2_predictions` klasörüne kaydedildi.
 *   **[2026-02-15]:** **Analiz:** v2 grafik analizi (`test/plot_loss_v2.py`) tamamlandı.
+*   **[2026-02-15]:** **FloodNet Multi-Class Training Tamamlandı:** 
+    *   **50 Epoch** eğitim başarıyla bitti.
+    *   Sınıflar: Sel (Flooded), Araçlar (Vehicles), Binalar, Yollar vb. (10 farklı nesne).
+    *   Final Loss: **0.3158** (Train) / **0.3931** (Val).
+    *   Model artık hem afet tespiti hem de nesne tespiti yeteneğine sahip.
+*   **[2026-02-15]:** **Analiz:** FloodNet özel loss grafiği (`test/plot_loss_floodnet.py`) hazırlandı.
 
 ## 2. Aktif Görevler (Current Tasks)
-*   [x] v2 Modelinin eğitimi ve log analizi.
-*   [x] v2 Checkpoint'inin (`model_epoch_20.pth`) yerel test edilmesi.
-*   [ ] Projenin GitHub'a final haliyle pushlanması.
+*   [x] FloodNet tabanlı çok sınıflı modelin eğitilmesi.
+*   [ ] Final checkpoint (`floodnet_epoch_50.pth`) indirilip yerel test edilmesi.
+*   [ ] Araç ve sel tespiti sonuçlarının görselleştirilmesi.
 ## 3. Proje Durumu
 *   **Faz:** Eğitim (Training).
 *   **Hedef:** 20. epoch sonunda modeli kaydedip test verileri üzerinde görselleştirme yapmak.
