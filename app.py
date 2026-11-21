@@ -12,7 +12,6 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 sys.path.append(os.getcwd())
 
 from src.models.attention_unet import AttentionUNet
-from src.models.sota_models import get_pro_model
 from src.models.transformer_models import get_segformer_model
 from src.models.interactive_sam import DisasterSAM
 from src.multimodal.disaster_vqa import DisasterMultimodalAssistant
@@ -55,16 +54,15 @@ st.markdown("""
 # --- CACHED MODELS ---
 @st.cache_resource
 def load_any_model(model_path, mode="SegFormer", out_channels=10, in_channels=3):
-    device = torch.device("cuda" if torch.device.is_available() else "cpu")
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"Model ağırlıkları bulunamadı: {model_path}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if mode == "SegFormer":
         model = get_segformer_model(num_labels=out_channels).to(device)
-    elif mode == "Unet++":
-        model = get_pro_model(in_channels=in_channels, out_channels=out_channels, architecture="unetplusplus").to(device)
     else:
         model = AttentionUNet(in_channels=in_channels, out_channels=out_channels).to(device)
         
-    if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.eval()
     return model, device
 
@@ -78,7 +76,7 @@ def load_multimodal_ai():
 
 # --- APP HEADER ---
 st.title("🌊 Yutronax AI Ultra Pro: İnteraktif Afet Yönetimi")
-st.markdown("Hugging Face SegFormer, SOTA mimarileri ve Meta SAM (İnteraktif Segmentasyon) ile güçlendirilmiş tam kapsamlı afet merkezi.")
+st.markdown("SegFormer, Attention U-Net ve SAM ile deneysel görüntü analizi.")
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -88,7 +86,7 @@ with st.sidebar:
     if app_mode == "Otomatik Analiz":
         model_choice = st.selectbox(
             "Yapay Zeka Modeli",
-            ["SegFormer (Transformer)", "Unet++ (ResNet-50)", "Attention U-Net"]
+            ["SegFormer (Transformer)", "Attention U-Net"]
         )
     
     st.markdown("---")
@@ -115,16 +113,17 @@ if uploaded_file is not None:
         if "SegFormer" in model_choice:
             model_path = "checkpoints_transformer/segformer_epoch_20.pth"
             mode = "SegFormer"
-        elif "Unet++" in model_choice:
-            model_path = "checkpoints_sota/unetplusplus_resnet50_epoch_20.pth"
-            mode = "Unet++"
         else:
-            model_path = "checkpoints/floodnet_epoch_50.pth"
+            model_path = "checkpoints_floodnet/floodnet_epoch_20.pth"
             mode = "AttentionUNet"
 
         if st.button("Analizi Başlat 🚀"):
             with st.spinner(f"{mode} Modeli Pikselleri Hesaplanıyor..."):
-                model, device = load_any_model(model_path, mode=mode)
+                try:
+                    model, device = load_any_model(model_path, mode=mode)
+                except (FileNotFoundError, RuntimeError, ValueError) as exc:
+                    st.error(f"Model yüklenemedi: {exc}")
+                    st.stop()
                 input_size = (256, 256)
                 transform = transforms.Compose([
                     transforms.Resize(input_size),
@@ -195,3 +194,4 @@ if uploaded_file is not None:
             st.success(f"**AI Cevabı:** {answer}")
 else:
     st.warning("👈 Lütfen soldan bir görüntü yükleyerek başlayın.")
+
