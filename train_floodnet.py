@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from src.models.attention_unet import AttentionUNet
 from src.data.floodnet_loader import FloodNetDataset
@@ -28,15 +28,16 @@ def train_floodnet(args):
     full_dataset = FloodNetDataset(root_dir=args.data_dir, transform=transform, augment=True)
     print(f"Dataset found: {len(full_dataset)} samples.")
     
-    if len(full_dataset) == 0:
-        print("ERROR: Dataset is empty. Check data_dir (images/ and masks/ folders).")
-        return
+    if len(full_dataset) < 2:
+        raise ValueError("At least two matched images and masks are required.")
 
     # Split
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
-    val_dataset.dataset.augment = False
+    indices = torch.randperm(len(full_dataset), generator=torch.Generator().manual_seed(args.seed)).tolist()
+    validation_source = FloodNetDataset(root_dir=args.data_dir, transform=transform, augment=False)
+    train_dataset = Subset(full_dataset, indices[:train_size])
+    val_dataset = Subset(validation_source, indices[train_size:])
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -93,6 +94,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--seed', type=int, default=42, help="Seed for the train/validation split")
     args = parser.parse_args()
 
     train_floodnet(args)
+
