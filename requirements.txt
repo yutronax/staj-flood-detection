@@ -8,3 +8,6 @@ shapely
 transformers
 pillow
 requests
+streamlit
+streamlit-image-coordinates
+
