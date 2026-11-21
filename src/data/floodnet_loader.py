@@ -38,7 +38,7 @@ class FloodNetDataset(data.Dataset):
         if not os.path.exists(img_dir):
             return []
 
-        for img_name in os.listdir(img_dir):
+        for img_name in sorted(os.listdir(img_dir)):
             if img_name.endswith('.jpg'):
                 mask_name = img_name.replace('.jpg', '.png')
                 mask_path = os.path.join(mask_dir, mask_name)
@@ -98,3 +98,4 @@ if __name__ == "__main__":
         print(f"Unique Class IDs: {torch.unique(y)}")
     else:
         print("No samples found in data/floodnet")
+
